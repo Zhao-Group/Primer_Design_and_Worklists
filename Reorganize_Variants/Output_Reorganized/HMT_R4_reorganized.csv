@@ -1,0 +1,97 @@
+Mutation,Blank
+ V140T  / L101I  /  T213S  /  V178E,Blank
+ V140T  /  L101I  /  V178E / E206D ,Blank
+ V140T /  L101I  /  T213S  / E206D ,Blank
+ V140T  /  T213S  /  V178E / E206D ,Blank
+ V140T  / L101I  /  V178E  /  V195H,Blank
+ V140T  / L101I  /  T213S  /  V195H,Blank
+ V140T  /  L101I  /  V178E / D9A ,Blank
+ V140T  /  L101I  /  V195H / E206D ,Blank
+ V140T  / L101I  /  V178E /  R51Q ,Blank
+ V140T  / T213S  /  V178E  /  V195H,Blank
+ V140T /  L101I  /  T213S  / D9A ,Blank
+ V140T  /  V178E  /  V195H / E206D ,Blank
+ V140T /  L101I  /  E206D  / D9A ,Blank
+ V140T  / L101I  /  V178E /  S63N ,Blank
+ V140T  /  L101I  /  V178E / E32N ,Blank
+ V140T  / L101I  /  V178E  /  V204I,Blank
+ V140T  /  L101I  /  V178E / E32K ,Blank
+ V140T / L101I  /  T213S  /  R51Q ,Blank
+ V140T  /  T213S  /  V178E / D9A ,Blank
+ V140T /  L101I  / E206D  /  R51Q ,Blank
+ V140T  /  T213S  /  V195H / E206D ,Blank
+ V140T / L101I  /  T213S  /  S63N ,Blank
+ V140T  /  V178E /  E206D  / D9A ,Blank
+ V140T /  L101I  /  T213S  / E32N ,Blank
+ V140T  / L101I  /  T213S  /  V204I,Blank
+ V140T /  L101I  / E206D  /  S63N ,Blank
+ V140T /  L101I  /  T213S  / E32K ,Blank
+ V140T /  L101I  / E206D  /  E32N ,Blank
+ V140T  /  L101I  / E206D  /  V204I,Blank
+ V140T /  L101I  / E206D  /  E32K ,Blank
+ V140T /  T213S  /  E206D  / D9A ,Blank
+ V140T  / T213S  /  V178E  /  V204I,Blank
+ V140T  /  T213S  /  V178E / E32K ,Blank
+ V140T  /  L101I  /  V178E / D9T ,Blank
+ V140T  /  L101I  /  V195H / D9A ,Blank
+ V140T  /  L101I  /  V178E / E32G ,Blank
+ V140T /  T213S  / E206D  /  R51Q ,Blank
+ V140T /  T213S  / E206D  /  S63N ,Blank
+ V140T /  T213S  / E206D  /  E32N ,Blank
+ V140T /  L101I  /  T213S  / D9T ,Blank
+ V140T  / L101I  /  V195H /  R51Q ,Blank
+ V140T  /  T213S  / E206D  /  V204I,Blank
+ V140T  /  V178E  /  V195H / D9A ,Blank
+ V140T /  T213S  / E206D  /  E32K ,Blank
+ V140T /  L101I  /  T213S  / E32G ,Blank
+ V140T /  L101I  /  E206D  / D9T ,Blank
+ V140T  / L101I  /  V195H /  S63N ,Blank
+ V140T /  L101I  / E206D  /  E32G ,Blank
+ V140T  /  L101I  /  V195H / E32N ,Blank
+ V140T  /  L101I  /  V178E / E43K ,Blank
+ V140T  / L101I  /  V195H  /  V204I,Blank
+ V140T  /  L101I  /  V195H / E32K ,Blank
+ V140T  /  V178E  /  V195H / R51Q ,Blank
+ V140T /  L101I  / D9A  /  R51Q ,Blank
+ V140T  /  T213S  /  V195H / D9A ,Blank
+ V140T  /  T213S  /  V178E / E32G ,Blank
+ V140T  /  V195H /  E206D  / D9A ,Blank
+ V140T  /  V178E  /  V195H / S63N ,Blank
+ V140T /  L101I  / D9A  /  S63N ,Blank
+ V140T  /  V178E  /  V195H / E32N ,Blank
+ V140T /  L101I  /  T213S  / E43K ,Blank
+ V140T /  L101I  / D9A  /  E32N ,Blank
+V140T  /  V178E  /  V195H  /  V204I,Blank
+ V140T  /  L101I  / D9A  /  V204I,Blank
+ V140T  /  V178E  /  V195H / E32K ,Blank
+ V140T /  L101I  / D9A  /  E32K ,Blank
+ V140T /  L101I  / E206D  /  E43K ,Blank
+ V140T  /  T213S  /  V195H / R51Q ,Blank
+ V140T  /  V178E / D9A  /  R51Q ,Blank
+ V140T /  T213S  /  E206D  / D9T ,Blank
+ V140T  / L101I  /  V178E /  T107L ,Blank
+ V140T  /  V195H / E206D  /  R51Q ,Blank
+ V140T  /  L101I  /  V178E / A102N ,Blank
+ V140T / L101I  /  R51Q  /  S63N ,Blank
+ V140T  / L101I  /  V178E /  T130P ,Blank
+ V140T  /  T213S  /  V195H / S63N ,Blank
+ V140T /  T213S  / E206D  /  E32G ,Blank
+ V140T /  L101I  /  R51Q  / E32N ,Blank
+ V140T  /  V178E / D9A  /  S63N ,Blank
+ V140T  /  T213S  /  V195H / E32N ,Blank
+ V140T  / L101I  /  R51Q  /  V204I,Blank
+ V140T  /  V178E / D9A  /  E32N ,Blank
+ V140T  / T213S  /  V195H  /  V204I,Blank
+ V140T  /  V195H / E206D  /  S63N ,Blank
+ V140T  /  V178E  / D9A  /  V204I,Blank
+ V140T /  L101I  /  R51Q  / E32K ,Blank
+ V140T  /  T213S  /  V195H / E32K ,Blank
+ V140T  /  V195H / E206D  /  E32N ,Blank
+ V140T  /  V178E / D9A  /  E32K ,Blank
+ V140T  /  L101I  /  V195H / D9T ,Blank
+ V140T /  L101I  /  S63N  / E32N ,Blank
+ V140T  /  V195H  / E206D  /  V204I,Blank
+ V140T /  T213S  / D9A  /  R51Q ,Blank
+ V140T  / L101I  /  S63N  /  V204I,Blank
+ V140T  /  V195H / E206D  /  E32K ,Blank
+ V140T  /  L101I  /  V195H / E32G ,Blank
