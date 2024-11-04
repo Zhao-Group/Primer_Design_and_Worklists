@@ -1,4 +1,4 @@
-## Primer design, PCR organization, and worklist generation used in continuous experimentation for autonomous protein engineering over iBioFAB
+## Primer design, PCR organization, and worklist generation
 ![Summary]( Figures/Schema.png)
 
 ### The Manuscript
