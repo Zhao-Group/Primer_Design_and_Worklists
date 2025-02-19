@@ -2,7 +2,7 @@
 ![Summary]( Figures/Schema.png)
 
 ### The Manuscript
-This repository accompanies the work ["A Generalized Platform for Artificial Intelligence-powered Autonomous Protein Engineering"](https://).
+This repository accompanies the work ["A Generalized Platform for Artificial Intelligence-powered Autonomous Protein Engineering"](https://www.biorxiv.org/content/10.1101/2025.02.12.637932v1).
 
 ###  PCR Primer Design and Variant Management
 This repository contains a set of Python scripts designed for efficient primer design and PCR template selection across multiple rounds of continuous machine-learning guided autonomous protein engineering. Each script handles specific tasks related to mutagenesis primer design, variant naming, and PCR preparations for successive rounds.
@@ -28,6 +28,6 @@ This repository contains a set of Python scripts designed for efficient primer d
 <summary>If you use this tool, please cite us:</summary>
 
 ```bibtex
-Singh, Nilmani, et al. " A Generalized Platform for Artificial Intelligence-powered Autonomous Protein Engineering." …blank for now…..
+Singh, Nilmani, et al. " A Generalized Platform for Artificial Intelligence-powered Autonomous Protein Engineering." bioRxiv (2025): 2025-02.
 ```
 </details>
