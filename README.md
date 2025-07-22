@@ -4,7 +4,7 @@
 ### The Manuscript
 This repository accompanies the work [A generalized platform for artificial intelligence-powered autonomous enzyme engineering
 ](https://www.nature.com/articles/s41467-025-61209-y)
-Please cite the reference below if you use this tool.
+<br>Please cite the reference below if you use this tool.
 
 ###  PCR Primer Design and Variant Management
 This repository contains a set of Python scripts designed for efficient primer design and PCR template selection across multiple rounds of continuous machine-learning guided autonomous protein engineering. Each script handles specific tasks related to mutagenesis primer design, variant naming, and PCR preparations for successive rounds.
@@ -29,6 +29,6 @@ This repository contains a set of Python scripts designed for efficient primer d
 <summary>If you use this tool, please cite us:</summary>
 
 ```bibtex
-Singh, Nilmani, et al. "A generalized platform for artificial intelligence-powered autonomous enzyme engineering" Nature Communications volume 16, Article number: 5648 (2025).
+Singh, Nilmani, et al. "A generalized platform for artificial intelligence-powered autonomous enzyme engineering" Nature Communications, vol. 16:5648 (2025).
 ```
 </details>
