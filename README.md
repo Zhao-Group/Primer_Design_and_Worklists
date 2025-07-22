@@ -29,6 +29,6 @@ This repository contains a set of Python scripts designed for efficient primer d
 <summary>If you use this tool, please cite us:</summary>
 
 ```bibtex
-Singh, Nilmani, et al. "A generalized platform for artificial intelligence-powered autonomous enzyme engineering" Nature Communications, vol. 16:5648 (2025).
+Singh, Nilmani, et al. "A generalized platform for artificial intelligence-powered autonomous enzyme engineering" Nature Communications, vol 16:5648 (2025).
 ```
 </details>
