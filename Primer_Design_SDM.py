@@ -202,7 +202,7 @@ if __name__ == '__main__':
 
     out_path, path_fwd, path_rev = process_outputs(args.Output_Directory,args.Primer_Output_File,args.Forward_Primers_File,args.Reverse_Primers_File)
 
-    remind_user_to_check_constants(args.Mutation_List,args.Output_Directory,args.ORF_File)
+    remind_user_to_check_constants(args.Mutation_List,args.Output_Directory,args.ORF_File,args.Codon_Table_File)
     print(f'Working Directory: {os.getcwd()} \nProcessing...')
     
     orf_seq, mutations, codon_table = read_orf_and_mutation_list(args.ORF_File,args.Mutation_List,args.Codon_Table_File)
