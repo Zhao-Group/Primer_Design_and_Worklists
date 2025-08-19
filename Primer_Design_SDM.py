@@ -57,7 +57,7 @@ def process_outputs(output_dir,primer_output_file,fwd_primers_file,rev_primers_f
 
 def remind_user_to_check_constants(mut_file,out_path,orf_file,codon_file):
     """Reminds the user to review constants and make changes if needed."""
-    print("\n⚠️  Reminder: Please check the following constants: \n")
+    print("\n⚠️ Reminder: Please check the following constants: \n")
     print(f"  - MUTATION_FILE: {mut_file}\n")
     print(f"  - PRIMER_OUTPUT: {out_path}\n")
     print(f"  - ORF_FILE: {orf_file}\n")
@@ -198,12 +198,14 @@ if __name__ == '__main__':
     # ORF_FILE = 'Primer_Design/HMT.txt' 
     parser.add_argument('-orf', '--ORF_File', default='Primer_Design/HMT.txt', help="Open Reading Frame file") 
 
-    out_path, path_fwd, path_rev = process_outputs(parser.Output_Directory,parser.Primer_Output_File,parser.Forward_Primers_File,parser.Reverse_Primers_File)
+    args = parser.parse_args()
 
-    remind_user_to_check_constants(parser.Mutation_List,parser.Output_Directory,parser.ORF_File)
+    out_path, path_fwd, path_rev = process_outputs(args.Output_Directory,args.Primer_Output_File,args.Forward_Primers_File,args.Reverse_Primers_File)
+
+    remind_user_to_check_constants(args.Mutation_List,args.Output_Directory,args.ORF_File)
     print(f'Working Directory: {os.getcwd()} \nProcessing...')
     
-    orf_seq, mutations, codon_table = read_orf_and_mutation_list(parser.ORF_File,parser.Mutation_List,parser.Codon_Table_File)
+    orf_seq, mutations, codon_table = read_orf_and_mutation_list(args.ORF_File,args.Mutation_List,args.Codon_Table_File)
 
     find_repeated_kmers(orf_seq)
     #check if provided mutations align with translation
