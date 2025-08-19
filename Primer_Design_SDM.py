@@ -117,7 +117,7 @@ def design_primers(orf_seq, mutations, codon_table):
         primer = extract_primer(mutated_seq, pos * 3)
         tm = int(math.ceil(calc_tm(str(primer), dv_conc=2, tm_method='santalucia', salt_corrections_method='owczarzy')))
 
-        primers.append((mutation, primer, tm, int(SeqUtils.gc_fraction(primer)), len(primer))) #SeqUtils.GC is deprecated after Biopython 1.82 
+        primers.append((mutation, primer, tm, int(SeqUtils.gc_fraction(primer)*100.0), len(primer))) #SeqUtils.GC is deprecated after Biopython 1.82 
         
     return pd.DataFrame(primers, columns=['Name', 'Sequence', 'Tm', 'GC', 'Length'])
 
