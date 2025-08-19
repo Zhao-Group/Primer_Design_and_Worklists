@@ -2,7 +2,7 @@ from pathlib import Path
 from Bio import SeqUtils
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from primer3 import calcTm
+from primer3 import calc_tm # as calcTm - calcTm is deprecated
 
 import pandas as pd
 from itertools import combinations
@@ -57,12 +57,12 @@ def process_outputs(output_dir,primer_output_file,fwd_primers_file,rev_primers_f
 
 def remind_user_to_check_constants(mut_file,out_path,orf_file,codon_file):
     """Reminds the user to review constants and make changes if needed."""
-    print("\n⚠️ Reminder: Please check the following constants: \n")
+    print("\n⚠️ Reminder: Please check the following inputs for correctness: \n")
     print(f"  - MUTATION_FILE: {mut_file}\n")
     print(f"  - PRIMER_OUTPUT: {out_path}\n")
     print(f"  - ORF_FILE: {orf_file}\n")
     print(f"  - CODON_TABLE: {codon_file}\n")
-    print("Modify these and more relevant values at the top of the script if necessary.\n")
+    print("Modify these and other relevant values in CLI arguments if necessary. Run with -h for help.\n")
         
         
 def find_repeated_kmers(seq, k=16):
@@ -115,9 +115,9 @@ def design_primers(orf_seq, mutations, codon_table):
 
         mutated_seq = orf_seq[:pos * 3] + new_codon + orf_seq[(pos + 1) * 3:]
         primer = extract_primer(mutated_seq, pos * 3)
-        tm = int(math.ceil(calcTm(str(primer), dv_conc=2, tm_method='santalucia', salt_corrections_method='owczarzy')))
+        tm = int(math.ceil(calc_tm(str(primer), dv_conc=2, tm_method='santalucia', salt_corrections_method='owczarzy')))
 
-        primers.append((mutation, primer, tm, int(SeqUtils.GC(primer)), len(primer)))
+        primers.append((mutation, primer, tm, int(SeqUtils.gc_fraction(primer)), len(primer))) #SeqUtils.GC is deprecated after Biopython 1.82 
         
     return pd.DataFrame(primers, columns=['Name', 'Sequence', 'Tm', 'GC', 'Length'])
 
