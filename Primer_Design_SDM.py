@@ -12,6 +12,7 @@ import sys
 import re
 import math
 from pathlib import Path
+import argparse
 
 
 # Design primers in 96-well format for Site-directed mutagenesis. One mutation at a time for this script.
@@ -25,39 +26,42 @@ from pathlib import Path
 ### INPUTS ###########################
 ######################################
 
-CODON_TABLE_FILE = 'Primer_Design/Codon_Table_Standard.csv'
+#CODON_TABLE_FILE = 'Primer_Design/Codon_Table_Standard.csv'
 #ORF_FILE = 'Phytase_II.txt' # This file has intentional mistakes to test the script
-ORF_FILE = 'Primer_Design/HMT.txt'   ## Change input ORF filename
-MUTATION_LIST_FILE = 'Primer_Design/HMT_Plate2.csv' ## Change input mutation csv filename. column name should be "Mutations"
+#ORF_FILE = 'Primer_Design/HMT.txt'   ## Change input ORF filename
+#MUTATION_LIST_FILE = 'Primer_Design/HMT_Plate2.csv' ## Change input mutation csv filename. column name should be "Mutations"
 
 
 ### OUTPUTS ###########################
 ######################################
 
-BASE_DIR = Path.cwd()
-print(BASE_DIR)
-OUTPUT_DIR = 'Primer_Design/Primers_HMT_Plate2' # Change output folder
-PRIMER_OUTPUT_FILE = 'HMT_Designed_primers.csv' # Change output file 1
-Forward_Primers_FILE = 'HMT_Forward_Primers_Plate2.csv' # Change output file 2
-Reverse_Primers_FILE = 'HMT_Reverse_Primers_Plate2.csv' # Change output file 3
+#BASE_DIR = Path.cwd()
+#print(BASE_DIR)
+#OUTPUT_DIR = 'Primer_Design/Primers_HMT_Plate2' # Change output folder
+#PRIMER_OUTPUT_FILE = 'HMT_Designed_primers.csv' # Change output file 1
+#Forward_Primers_FILE = 'HMT_Forward_Primers_Plate2.csv' # Change output file 2
+#Reverse_Primers_FILE = 'HMT_Reverse_Primers_Plate2.csv' # Change output file 3
 
 # Create the full path to the file ###########################
 ######################################
-Output_Path = BASE_DIR / OUTPUT_DIR / PRIMER_OUTPUT_FILE
-Output_Path.parent.mkdir(parents=True, exist_ok=True)
-Output_Path_Fwd = BASE_DIR / OUTPUT_DIR / Forward_Primers_FILE
-Output_Path_Rev = BASE_DIR / OUTPUT_DIR / Reverse_Primers_FILE
+def process_outputs(output_dir,primer_output_file,fwd_primers_file,rev_primers_file):
+    base_dir=Path.cwd()
+    Output_Path = base_dir / output_dir / primer_output_file
+    Output_Path.parent.mkdir(parents=True, exist_ok=True)
+    Output_Path_Fwd = base_dir / output_dir / fwd_primers_file
+    Output_Path_Rev = base_dir / output_dir / rev_primers_file
+    return Output_Path, Output_Path_Fwd, Output_Path_Rev
 
 ######################################
 ######################################
 
-def remind_user_to_check_constants():
+def remind_user_to_check_constants(mut_file,out_path,orf_file,codon_file):
     """Reminds the user to review constants and make changes if needed."""
     print("\n⚠️  Reminder: Please check the following constants: \n")
-    print(f"  - MUTATION_FILE: {MUTATION_LIST_FILE}\n")
-    print(f"  - PRIMER_OUTPUT: {Output_Path}\n")
-    print(f"  - ORF_FILE: {ORF_FILE}\n")
-    print(f"  - CODON_TABLE: {CODON_TABLE_FILE}\n")
+    print(f"  - MUTATION_FILE: {mut_file}\n")
+    print(f"  - PRIMER_OUTPUT: {out_path}\n")
+    print(f"  - ORF_FILE: {orf_file}\n")
+    print(f"  - CODON_TABLE: {codon_file}\n")
     print("Modify these and more relevant values at the top of the script if necessary.\n")
         
         
@@ -71,11 +75,11 @@ def find_repeated_kmers(seq, k=16):
     if repeats:
         print(f'\nWarning: {repeats} repeats of {k}bp or more in the ORF. This will affect PCR & SDM.')
 
-def read_orf_and_mutation_list():
+def read_orf_and_mutation_list(orf_file,mutation_list_file,codon_table_file):
     """Read the ORF sequence, mutation list, and codon table."""
-    orf_seq = Seq(Path(ORF_FILE).read_text().strip())
-    mutation_list = pd.read_csv(MUTATION_LIST_FILE)
-    codon_table = pd.read_csv(CODON_TABLE_FILE)
+    orf_seq = Seq(Path(orf_file).read_text().strip())
+    mutation_list = pd.read_csv(mutation_list_file)
+    codon_table = pd.read_csv(codon_table_file)
     return orf_seq, mutation_list, codon_table
 
 
@@ -146,7 +150,7 @@ def create_primer_order_file(primers):
     return pd.DataFrame(primer_order, columns=['Name', 'Sequence', 'Tm', 'GC', 'Length'])
 
 
-def separate_primers_by_type(primers):
+def separate_primers_by_type(primers, out_path_fwd, out_path_rev):
     """Separate forward and reverse primers into different CSV files."""
 
     # Create forward and reverse primer DataFrames safely
@@ -161,8 +165,8 @@ def separate_primers_by_type(primers):
     rev_primers.loc[:, 'Well'] = wells[:len(rev_primers)]
 
     # Save to CSV files
-    fwd_primers.to_csv(Output_Path_Fwd, index=False)
-    rev_primers.to_csv(Output_Path_Rev, index=False)
+    fwd_primers.to_csv(out_path_fwd, index=False)
+    rev_primers.to_csv(out_path_rev, index=False)
 
     print("\nPrimers separated for IDT order in 96-well plate.")
     
@@ -176,10 +180,30 @@ def Validate_primer_length(primer_length):
 
 if __name__ == '__main__':
     start_time = time.time()
-    remind_user_to_check_constants()
+
+    parser = argparse.ArgumentParser()
+    # MUTATION_LIST_FILE = 'Primer_Design/HMT_Plate2.csv'
+    parser.add_argument('-m', '--Mutation_List', default='Primer_Design/HMT_Plate2.csv', help="Mutation list filename")
+    # 'Primer_Design/Primers_HMT_Plate2'
+    parser.add_argument('-o', '--Output_Directory', default='Primer_Design/Primers_HMT_Plate2', help="Output directory")
+    # 'HMT_Designed_primers.csv'
+    parser.add_argument('-f', '--Primer_Output_File', default='HMT_Designed_primers.csv', help="Primer output file")
+    # 'HMT_Forward_Primers_Plate2.csv'
+    parser.add_argument('-fwd', '--Forward_Primers_File', default='HMT_Forward_Primers_Plate2.csv', help="Forward primers file")
+    # Reverse_Primers_FILE = 'HMT_Reverse_Primers_Plate2.csv
+    parser.add_argument('-rev', '--Reverse_Primers_File', default='HMT_Reverse_Primers_Plate2.csv', help="Reverse primers file")
+
+    # CODON_TABLE_FILE = 'Primer_Design/Codon_Table_Standard.csv'
+    parser.add_argument('-c', '--Codon_Table_File', default='Primer_Design/Codon_Table_Standard.csv', help="Code Table file") 
+    # ORF_FILE = 'Primer_Design/HMT.txt' 
+    parser.add_argument('-orf', '--ORF_File', default='Primer_Design/HMT.txt', help="Open Reading Frame file") 
+
+    out_path, path_fwd, path_rev = process_outputs(parser.Output_Directory,parser.Primer_Output_File,parser.Forward_Primers_File,parser.Reverse_Primers_File)
+
+    remind_user_to_check_constants(parser.Mutation_List,parser.Output_Directory,parser.ORF_File)
     print(f'Working Directory: {os.getcwd()} \nProcessing...')
     
-    orf_seq, mutations, codon_table = read_orf_and_mutation_list()
+    orf_seq, mutations, codon_table = read_orf_and_mutation_list(parser.ORF_File,parser.Mutation_List,parser.Codon_Table_File)
 
     find_repeated_kmers(orf_seq)
     #check if provided mutations align with translation
@@ -189,7 +213,7 @@ if __name__ == '__main__':
     Validate_primer_length(primers["Length"].tolist())
     
     primer_order = create_primer_order_file(primers)
-    primer_order.to_csv(Output_Path, index=False)
+    primer_order.to_csv(out_path, index=False)
 
-    separate_primers_by_type(primer_order)
+    separate_primers_by_type(primer_order,path_fwd,path_rev)
     print(f"\nFinished in {time.time() - start_time:.6f} seconds.")
