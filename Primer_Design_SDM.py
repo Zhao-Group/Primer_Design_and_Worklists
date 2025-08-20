@@ -183,20 +183,20 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     # MUTATION_LIST_FILE = 'Primer_Design/HMT_Plate2.csv'
-    parser.add_argument('-m', '--Mutation_List', default='Primer_Design/HMT_Plate2.csv', help="Mutation list filename")
+    parser.add_argument('-m', '--Mutation_List', default='Primer_Design/HMT_Plate2.csv', help="List of Mutation Names mapped to well positions")
     # 'Primer_Design/Primers_HMT_Plate2'
     parser.add_argument('-o', '--Output_Directory', default='Primer_Design/Primers_HMT_Plate2', help="Output directory")
     # 'HMT_Designed_primers.csv'
-    parser.add_argument('-f', '--Primer_Output_File', default='HMT_Designed_primers.csv', help="Primer output file")
+    parser.add_argument('-f', '--Primer_Output_File', default='HMT_Designed_primers.csv', help="Output file for primers assoc. characteristic data")
     # 'HMT_Forward_Primers_Plate2.csv'
-    parser.add_argument('-fwd', '--Forward_Primers_File', default='HMT_Forward_Primers_Plate2.csv', help="Forward primers file")
+    parser.add_argument('-fwd', '--Forward_Primers_File', default='HMT_Forward_Primers_Plate2.csv', help="Output file for Forward primers")
     # Reverse_Primers_FILE = 'HMT_Reverse_Primers_Plate2.csv
-    parser.add_argument('-rev', '--Reverse_Primers_File', default='HMT_Reverse_Primers_Plate2.csv', help="Reverse primers file")
+    parser.add_argument('-rev', '--Reverse_Primers_File', default='HMT_Reverse_Primers_Plate2.csv', help="Output file for Reverse primers")
 
     # CODON_TABLE_FILE = 'Primer_Design/Codon_Table_Standard.csv'
-    parser.add_argument('-c', '--Codon_Table_File', default='Primer_Design/Codon_Table_Standard.csv', help="Code Table file") 
+    parser.add_argument('-c', '--Codon_Table_File', default='Primer_Design/Codon_Table_Standard.csv', help="Codon Translation Table Mapping File") 
     # ORF_FILE = 'Primer_Design/HMT.txt' 
-    parser.add_argument('-orf', '--ORF_File', default='Primer_Design/HMT.txt', help="Open Reading Frame file") 
+    parser.add_argument('-orf', '--ORF_File', default='Primer_Design/HMT.txt', help="File containing Open Reading Frame Sequence") 
 
     args = parser.parse_args()
 
