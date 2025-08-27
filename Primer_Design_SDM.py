@@ -2,6 +2,7 @@ from pathlib import Path
 from Bio import SeqUtils
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from Bio.Data import CodonTable
 from primer3 import calc_tm # as calcTm - calcTm is deprecated
 
 import pandas as pd
@@ -55,13 +56,13 @@ def process_outputs(output_dir,primer_output_file,fwd_primers_file,rev_primers_f
 ######################################
 ######################################
 
-def remind_user_to_check_constants(mut_file,out_path,orf_file,codon_file):
+def remind_user_to_check_constants(mut_file,out_path,orf_file,codon_file_id):
     """Reminds the user to review constants and make changes if needed."""
     print("\n⚠️ Reminder: Please check the following inputs for correctness: \n")
     print(f"  - MUTATION_FILE: {mut_file}\n")
     print(f"  - PRIMER_OUTPUT: {out_path}\n")
     print(f"  - ORF_FILE: {orf_file}\n")
-    print(f"  - CODON_TABLE: {codon_file}\n")
+    print(f"  - CODON_TABLE: {CodonTable.unambiguous_dna_by_id[int(codon_file_id)]}\n")
     print("Modify these and other relevant values in CLI arguments if necessary. Run with -h for help.\n")
         
         
@@ -75,12 +76,12 @@ def find_repeated_kmers(seq, k=16):
     if repeats:
         print(f'\nWarning: {repeats} repeats of {k}bp or more in the ORF. This will affect PCR & SDM.')
 
-def read_orf_and_mutation_list(orf_file,mutation_list_file,codon_table_file):
+def read_orf_and_mutation_list(orf_file,mutation_list_file,codon_table_file_id):
     """Read the ORF sequence, mutation list, and codon table."""
     orf_seq = Seq(Path(orf_file).read_text().strip())
     mutation_list = pd.read_csv(mutation_list_file)
-    codon_table = pd.read_csv(codon_table_file)
-    return orf_seq, mutation_list, codon_table
+    #codon_table = CodonTable.unambiguous_dna_by_id[codon_table_file_id].tolist() #pd.read_csv(codon_table_file)
+    return orf_seq, mutation_list #, codon_table
 
 
 def validate_position(amino_acid_pos, protein_len):
@@ -101,7 +102,7 @@ def validate_mutations(mutation_list, orf_seq):
             sys.exit(f'ERROR: at null value in csv file. Format the csv file.')
 
 
-def design_primers(orf_seq, mutations, codon_table):
+def design_primers(orf_seq, mutations, codon_table_id):
     """Main primer design function."""
     primers = []
 
@@ -110,7 +111,12 @@ def design_primers(orf_seq, mutations, codon_table):
         validate_position(pos + 1, len(orf_seq) // 3)
 
         original_aa, target_aa = mutation[0], mutation[-1]
-        codons = codon_table[codon_table['SingleLetter'] == target_aa]['Codon'].tolist()
+        #print(target_aa)
+        codon_table = CodonTable.unambiguous_dna_by_id[int(codon_table_id)].forward_table
+        #print(codon_table)
+        codons = [key for key, value in codon_table.items() if value == target_aa]
+        #codons = (target_aa.translate(table=int(codon_table_id))).tolist()
+        #codons = codon_table[codon_table['SingleLetter'] == target_aa]['Codon'].tolist()
         new_codon = find_optimal_codon(orf_seq, pos, codons)
 
         mutated_seq = orf_seq[:pos * 3] + new_codon + orf_seq[(pos + 1) * 3:]
@@ -194,7 +200,9 @@ if __name__ == '__main__':
     parser.add_argument('-rev', '--Reverse_Primers_File', default='HMT_Reverse_Primers_Plate2.csv', help="Output file for Reverse primers")
 
     # CODON_TABLE_FILE = 'Primer_Design/Codon_Table_Standard.csv'
-    parser.add_argument('-c', '--Codon_Table_File', default='Primer_Design/Codon_Table_Standard.csv', help="Codon Translation Table Mapping File") 
+    #parser.add_argument('-c', '--Codon_Table_File', default='Primer_Design/Codon_Table_Standard.csv', help="Codon Translation Table Mapping File")
+
+    parser.add_argument('-c','--NCBI_Codon_Table_Value', default=1,help="NCBI Codon Translation Table ID Value") 
     # ORF_FILE = 'Primer_Design/HMT.txt' 
     parser.add_argument('-orf', '--ORF_File', default='Primer_Design/HMT.txt', help="File containing Open Reading Frame Sequence") 
 
@@ -202,16 +210,16 @@ if __name__ == '__main__':
 
     out_path, path_fwd, path_rev = process_outputs(args.Output_Directory,args.Primer_Output_File,args.Forward_Primers_File,args.Reverse_Primers_File)
 
-    remind_user_to_check_constants(args.Mutation_List,args.Output_Directory,args.ORF_File,args.Codon_Table_File)
+    remind_user_to_check_constants(args.Mutation_List,args.Output_Directory,args.ORF_File,args.NCBI_Codon_Table_Value)#args.Codon_Table_File)
     print(f'Working Directory: {os.getcwd()} \nProcessing...')
     
-    orf_seq, mutations, codon_table = read_orf_and_mutation_list(args.ORF_File,args.Mutation_List,args.Codon_Table_File)
+    orf_seq, mutations = read_orf_and_mutation_list(args.ORF_File,args.Mutation_List,args.NCBI_Codon_Table_Value)
 
     find_repeated_kmers(orf_seq)
     #check if provided mutations align with translation
     validate_mutations(mutations['Mutations'].tolist(), orf_seq) 
 
-    primers = design_primers(orf_seq, mutations, codon_table)
+    primers = design_primers(orf_seq, mutations, args.NCBI_Codon_Table_Value)
     Validate_primer_length(primers["Length"].tolist())
     
     primer_order = create_primer_order_file(primers)
