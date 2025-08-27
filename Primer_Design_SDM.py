@@ -110,12 +110,10 @@ def design_primers(orf_seq, mutations, codon_table_id):
         pos = int(re.search(r'\d+', mutation).group()) - 1
         validate_position(pos + 1, len(orf_seq) // 3)
 
+        # Get all possible translation table combinations for the aa resiudes in question
         original_aa, target_aa = mutation[0], mutation[-1]
-        #print(target_aa)
         codon_table = CodonTable.unambiguous_dna_by_id[int(codon_table_id)].forward_table
-        #print(codon_table)
         codons = [key for key, value in codon_table.items() if value == target_aa]
-        #codons = (target_aa.translate(table=int(codon_table_id))).tolist()
         #codons = codon_table[codon_table['SingleLetter'] == target_aa]['Codon'].tolist()
         new_codon = find_optimal_codon(orf_seq, pos, codons)
 
