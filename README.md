@@ -24,6 +24,13 @@ This repository contains a set of Python scripts designed for efficient primer d
 - Python 3.x
 - Libraries: `pandas`, `itertools`, `collections`, `pathlib`, `os`, `sys`, `time`
 
+### Setup and Package Versions
+We recommend using a python virtual environment or conda environment to manage python package versions
+
+To setup with the appropriate versions, run the command:
+
+#### pip install requirements.txt
+
 ### Reference
 <details>
 <summary>If you use this tool, please cite us:</summary>
