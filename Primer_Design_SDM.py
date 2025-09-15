@@ -182,6 +182,35 @@ def Validate_primer_length(primer_length):
     if count:
         print(f'WARNING: {count} primers less than 27bp in the file.')
 
+# To check for High GC or High AT regions
+def Validate_GC_A(seq, min_length):
+    """
+    Find continuous high GC or high AT regions in a DNA sequence.
+    
+    Args:
+        seq (str or Seq): DNA sequence
+        min_length (int): minimum run length to report
+    
+    Returns:
+        list of tuples: (region_type, start, end, sequence)
+    """
+    seq = str(seq).upper() # Ensure the sequence is a string and uppercase
+    results = []
+    
+    # Regex for runs of G/C or A/T of length >= min_length
+    gc_pattern = re.compile(rf"[GC]{{{min_length},}}")
+    at_pattern = re.compile(rf"[AT]{{{min_length},}}")
+    
+    for match in gc_pattern.finditer(seq):
+        results.append(("GC", match.start(), match.end(), match.group()))
+    
+    for match in at_pattern.finditer(seq):
+        results.append(("AT", match.start(), match.end(), match.group()))
+    # print(results)
+    
+    return results
+
+
 if __name__ == '__main__':
     start_time = time.time()
 
@@ -222,6 +251,8 @@ if __name__ == '__main__':
     
     primer_order = create_primer_order_file(primers)
     primer_order.to_csv(out_path, index=False)
+    
+    Validate_GC_A(orf_seq, 8)
 
     separate_primers_by_type(primer_order,path_fwd,path_rev)
     print(f"\nFinished in {time.time() - start_time:.6f} seconds.")
