@@ -183,7 +183,7 @@ def Validate_primer_length(primer_length):
         print(f'WARNING: {count} primers less than 27bp in the file.')
 
 # To check for High GC or High AT regions
-def Validate_GC_A(seq, min_length):
+def Validate_GC_AT(seq, min_length):
     """
     Find continuous high GC or high AT regions in a DNA sequence.
     
@@ -209,6 +209,52 @@ def Validate_GC_A(seq, min_length):
     # print(results)
     
     return results
+
+def Validate_Homoploymer_Stretches(seq, min_length):
+     """
+    Homopolymer stretches (> 5bp), like a polyA tail etc.
+        Example: "AAAAA"
+    Args:
+        seq (str or Seq): DNA sequence
+        min_length (int): minimum homopolymer length
+    
+    Returns:
+        list of tuples: (base, start, end, stretch)
+    """
+     seq= str(seq).upper()
+     results = []
+
+     """ Homopolymer stretches are continuous sequences of the same DNA base, '
+     'which are typically adenine (A), thymine (T), guanine (G), and cytosine (C). """
+    
+    #  a_pattern = r"A{min_length,}" # , means no upper limit
+    #  t_pattern = r"T{min_length,}"
+    #  G_pattern = r"G{min_length,}"
+    #  C_pattern = r"C{min_length,}"
+
+    # List of patterns for each base
+     pattern_list = [ fr"A{{{min_length},}}",
+        fr"T{{{min_length},}}",
+        fr"G{{{min_length},}}",
+        fr"C{{{min_length},}}"]
+
+     pattern_names = ['A','T','G','C']
+
+     for i, pattern in enumerate(pattern_list):
+         compiled_pattern = re.compile(pattern)
+         for match in compiled_pattern.finditer(seq):
+             results.append((f"poly{pattern_names[i]} tail,",match.start(), match.end(), match.group()))
+
+    
+    #  print(results)
+     return results
+     
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
@@ -252,7 +298,11 @@ if __name__ == '__main__':
     primer_order = create_primer_order_file(primers)
     primer_order.to_csv(out_path, index=False)
     
-    Validate_GC_A(orf_seq, 8)
+    min_length_gc_at = 8 # minimum length of continuous GC or AT to report
+    Validate_GC_AT(orf_seq, min_length_gc_at)
+
+    min_length_homopolymer = 6 # minimum homopolymer length
+    Validate_Homoploymer_Stretches(orf_seq, min_length_homopolymer)
 
     separate_primers_by_type(primer_order,path_fwd,path_rev)
     print(f"\nFinished in {time.time() - start_time:.6f} seconds.")
