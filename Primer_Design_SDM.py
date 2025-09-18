@@ -5,6 +5,8 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Data import CodonTable
 from primer3 import calc_tm # as calcTm - calcTm is deprecated
 
+from Bio.SeqUtils import MeltingTemp as mt
+
 import pandas as pd
 from itertools import combinations
 import time
@@ -307,6 +309,42 @@ def Validate_GC_Content(seq, min_gc):
     
     return None
 
+
+def Validate_Tm_Values(seq,low_tm,high_tm):
+    """
+    checks for very low or very high Tm values for the sequence.
+    Args:
+        seq (str or Seq): DNA sequence
+        low_tm (int): minimum Tm value to report for Low Tm alert
+        high_tm (int): maximum Tm value to report for High Tm alert
+    
+    Returns:
+        string: Alert message of Tm value is too low or too high
+
+
+    Package and Function: Biopython(https://biopython.org/docs/1.75/api/Bio.SeqUtils.MeltingTemp.html), provides 3 ways to calculate Tm.
+    """
+    seq=str(seq).upper()
+
+    """Three ways to calculate Tm values using Biopython package."""
+    print('%0.2f' % mt.Tm_Wallace(seq))
+    print('%0.2f' % mt.Tm_GC(seq))
+
+    print('%0.2f' % mt.Tm_NN(seq))
+
+
+
+    Tm_Wallace =mt.Tm_Wallace(seq) #Rule of thumb method according to Biopython docs
+
+    if(Tm_Wallace<low_tm):
+        print(f'Warning: Low Tm value with {Tm_Wallace: .2f}C')
+        return (f'Warning: Low Tm value with {Tm_Wallace: .2f}C')
+    elif(Tm_Wallace>high_tm):
+        print(f'Warning: High Tm value with {Tm_Wallace: .2f}C')
+        return (f'Warning: High Tm value with {Tm_Wallace: .2f}C')
+    
+    return None
+
      
 
 
@@ -368,6 +406,9 @@ if __name__ == '__main__':
     min_gc=70 # minimum GC content percentage to report for High GC content alert
     Validate_GC_Content(orf_seq,min_gc)
 
+    low_tm=60 # minimum Tm value to report for Low Tm alert
+    high_tm=75 # maximum Tm value to report for High Tm alert
+    Validate_Tm_Values(orf_seq,low_tm,high_tm) 
 
     separate_primers_by_type(primer_order,path_fwd,path_rev)
     print(f"\nFinished in {time.time() - start_time:.6f} seconds.")
