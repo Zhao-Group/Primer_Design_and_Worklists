@@ -280,6 +280,33 @@ def Validate_Repeated_Fragments(seq,min_length=16):
 
     return repeated_fragments
 
+
+def Validate_GC_Content(seq, min_gc):
+    """
+    High GC Content (> 70%) means that in a DNA sequence, more than 70% of the bases are either G (guanine) or C (cytosine)
+
+    Args:
+        seq (str or Seq): DNA sequence
+        min_gc (int): minimum GC content percentage to report for High GC content alert
+    
+    Returns:
+        string: Alert message if GC content is high with the percentage value
+    """
+
+    seq=str(seq).upper()
+
+    total_length_of_seq=len(seq)
+    no_of_G=seq.count('G')
+    no_of_C=seq.count('C')
+    total_GC=no_of_G+no_of_C
+    GC_content= (total_GC/total_length_of_seq)*100
+
+    if(GC_content>min_gc):
+        print(f'Warning: High GC content with {GC_content: .2f}%')
+        return (f'Warning: High GC content with {GC_content: .2f}%')
+    
+    return None
+
      
 
 
@@ -337,6 +364,10 @@ if __name__ == '__main__':
     Validate_Homoploymer_Stretches(orf_seq, min_length_homopolymer)
 
     Validate_Repeated_Fragments(orf_seq,16)
+
+    min_gc=70 # minimum GC content percentage to report for High GC content alert
+    Validate_GC_Content(orf_seq,min_gc)
+
 
     separate_primers_by_type(primer_order,path_fwd,path_rev)
     print(f"\nFinished in {time.time() - start_time:.6f} seconds.")
