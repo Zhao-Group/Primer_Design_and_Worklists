@@ -248,6 +248,38 @@ def Validate_Homoploymer_Stretches(seq, min_length):
     
     #  print(results)
      return results
+
+def Validate_Repeated_Fragments(seq,min_length=16):
+    """
+    Detects repeated DNA fragments longer than min_len bp.
+    
+    Args:
+        seq (str or Seq): DNA sequence
+        min_len (int): minimum repeat length (default 16)
+    
+    Returns:
+        list of tuples: (fragment, positions)
+            fragment: the repeated subsequence
+            positions: list of start indices where it occurs
+    """
+    seq = str(seq).upper()  # Ensure the sequence is a string and uppercase
+    repeats={}
+    #sliding window approach for minimum length of min_length
+    for j in range(min_length, len(seq)+1):
+        for i in range(len(seq)-j+1):
+            fragment=seq[i:i+j]
+            if fragment in repeats:
+                repeats[fragment].append(i)
+            else:
+                repeats[fragment]=[i]
+
+    #get the repeated fragments
+    repeated_fragments = [(frag, pos) for frag, pos in repeats.items() if len(pos) > 1]
+
+    print(repeated_fragments)
+
+    return repeated_fragments
+
      
 
 
@@ -303,6 +335,8 @@ if __name__ == '__main__':
 
     min_length_homopolymer = 6 # minimum homopolymer length
     Validate_Homoploymer_Stretches(orf_seq, min_length_homopolymer)
+
+    Validate_Repeated_Fragments(orf_seq,16)
 
     separate_primers_by_type(primer_order,path_fwd,path_rev)
     print(f"\nFinished in {time.time() - start_time:.6f} seconds.")
