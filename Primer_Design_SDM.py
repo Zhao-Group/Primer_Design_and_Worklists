@@ -197,6 +197,7 @@ def Validate_GC_AT(seq, min_length):
     Returns:
         list of tuples: (region_type, start, end, sequence)
     """
+    
     seq = str(seq).upper() # Ensure the sequence is a string and uppercase
     results = []
     
@@ -209,7 +210,7 @@ def Validate_GC_AT(seq, min_length):
     
     for match in at_pattern.finditer(seq):
         results.append(("AT", match.start(), match.end(), match.group()))
-    # print(results)
+
     
     return results
 
@@ -279,7 +280,7 @@ def Validate_Repeated_Fragments(seq,min_length=16):
     #get the repeated fragments
     repeated_fragments = [(frag, pos) for frag, pos in repeats.items() if len(pos) > 1]
 
-    print(repeated_fragments)
+    if len(repeated_fragments)>=1: print(repeated_fragments)
 
     return repeated_fragments
 
@@ -389,15 +390,45 @@ def Validate_Hairpin_Formation(seq):
     seq=str(seq).upper()
    
     #  only works for sequences <60bp
+    if len(seq)>60:
+        print('Sequence length exceeds 60bp for hairpin validation.')
+        return None
 
     hairpin = primer3.bindings.calcHairpin(seq)
 
+    if(hairpin.structure_found):
+        print(f'Warning: Hairpin structure detected')
     
-    print("Structure:", hairpin.structure_found)
     
     return None
 
      
+
+def Validations(sequences):
+
+    for seq in sequences:
+        min_length_gc_at = 8 # minimum length of continuous GC or AT to report
+        GC_AT_result=Validate_GC_AT(seq, min_length_gc_at)
+        if len(GC_AT_result)>=1: print(f"Warning: High GC or AT {GC_AT_result}")
+
+        min_length_homopolymer = 6 # minimum homopolymer length
+        
+        Homoploymer_Stretches_result=Validate_Homoploymer_Stretches(seq, min_length_homopolymer)
+        if len(Homoploymer_Stretches_result)>=1: print(Homoploymer_Stretches_result)
+
+        Validate_Repeated_Fragments(seq,16)
+
+        min_gc=70 # minimum GC content percentage to report for High GC content alert
+        Validate_GC_Content(seq,min_gc)
+
+        low_tm=60 # minimum Tm value to report for Low Tm alert
+        high_tm=75 # maximum Tm value to report for High Tm alert
+        Validate_Tm_Values(seq,low_tm,high_tm) 
+
+        temp_diff=5 # maximum temperature difference between forward and reverse primers
+        Validate_Temperature_Difference(seq, temp_diff)
+
+        Validate_Hairpin_Formation(seq)
 
 
 
@@ -447,25 +478,14 @@ if __name__ == '__main__':
     primer_order = create_primer_order_file(primers)
     primer_order.to_csv(out_path, index=False)
     
-    min_length_gc_at = 8 # minimum length of continuous GC or AT to report
-    Validate_GC_AT(orf_seq, min_length_gc_at)
 
-    min_length_homopolymer = 6 # minimum homopolymer length
-    Validate_Homoploymer_Stretches(orf_seq, min_length_homopolymer)
+    sequences=primers["Sequence"].tolist() #list of primer sequences
 
-    Validate_Repeated_Fragments(orf_seq,16)
+    Validations(sequences)
+    
+    
 
-    min_gc=70 # minimum GC content percentage to report for High GC content alert
-    Validate_GC_Content(orf_seq,min_gc)
-
-    low_tm=60 # minimum Tm value to report for Low Tm alert
-    high_tm=75 # maximum Tm value to report for High Tm alert
-    Validate_Tm_Values(orf_seq,low_tm,high_tm) 
-
-    temp_diff=5 # maximum temperature difference between forward and reverse primers
-    Validate_Temperature_Difference(orf_seq, temp_diff)
-
-    #Validate_Hairpin_Formation(orf_seq)
+    
 
     separate_primers_by_type(primer_order,path_fwd,path_rev)
     print(f"\nFinished in {time.time() - start_time:.6f} seconds.")
