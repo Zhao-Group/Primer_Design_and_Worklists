@@ -4,6 +4,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Data import CodonTable
 from primer3 import calc_tm # as calcTm - calcTm is deprecated
+import primer3
 
 from Bio.SeqUtils import MeltingTemp as mt
 
@@ -327,21 +328,72 @@ def Validate_Tm_Values(seq,low_tm,high_tm):
     seq=str(seq).upper()
 
     """Three ways to calculate Tm values using Biopython package."""
-    print('%0.2f' % mt.Tm_Wallace(seq))
-    print('%0.2f' % mt.Tm_GC(seq))
+    # print('%0.2f' % mt.Tm_Wallace(seq))
+    # print('%0.2f' % mt.Tm_GC(seq))
 
-    print('%0.2f' % mt.Tm_NN(seq))
+    # print('%0.2f' % mt.Tm_NN(seq))
 
 
 
-    Tm_Wallace =mt.Tm_Wallace(seq) #Rule of thumb method according to Biopython docs
+    Tm =mt.Tm_NN(seq) #Tm_NN is implements the SantaLucia nearest-neighbor (NN) thermodynamic method.
 
-    if(Tm_Wallace<low_tm):
-        print(f'Warning: Low Tm value with {Tm_Wallace: .2f}C')
-        return (f'Warning: Low Tm value with {Tm_Wallace: .2f}C')
-    elif(Tm_Wallace>high_tm):
-        print(f'Warning: High Tm value with {Tm_Wallace: .2f}C')
-        return (f'Warning: High Tm value with {Tm_Wallace: .2f}C')
+    if(Tm<low_tm):
+        print(f'Warning: Low Tm value with {Tm: .2f}C')
+        return (f'Warning: Low Tm value with {Tm: .2f}C')
+    elif(Tm>high_tm):
+        print(f'Warning: High Tm value with {Tm: .2f}C')
+        return (f'Warning: High Tm value with {Tm: .2f}C')
+    
+    return None
+
+
+def Validate_Temperature_Difference(seq, temp_diff):
+    """
+    checks for The difference between forward and reverse primers should be within this temperature difference.
+    Args:
+        seq (str or Seq): DNA sequence
+        temp_diff (int): maximum temperature difference between forward and reverse primers
+    """
+
+    reverse_seq=str(seq.reverse_complement()).upper() # Reverse complement of the sequence
+
+    seq=str(seq).upper()
+
+    Tm_forward=mt.Tm_NN(seq)
+
+    
+    Tm_reverse=mt.Tm_NN(reverse_seq)
+    
+    difference=abs(Tm_forward-Tm_reverse)
+
+
+
+    if(difference>temp_diff):
+        print(f'Warning: High Tm difference between forward and reverse primers with {difference: .2f}C')
+        return (f'Warning: High Tm difference between forward and reverse primers with {difference: .2f}C')
+    
+    return None
+
+
+def Validate_Hairpin_Formation(seq):
+    """
+    checks for Hairpin formation in the sequence.
+    Args:
+        seq (str or Seq): DNA sequence
+    
+    Returns:
+        string: Alert message if hairpin structure is detected
+
+    Note: Used primer3 package from the docs present at https://libnano.github.io/primer3-py/api/bindings.html
+    """
+    seq=str(seq).upper()
+   
+    #  only works for sequences <60bp
+
+    hairpin = primer3.bindings.calcHairpin(seq)
+
+    
+    print("Structure:", hairpin.structure_found)
     
     return None
 
@@ -409,6 +461,11 @@ if __name__ == '__main__':
     low_tm=60 # minimum Tm value to report for Low Tm alert
     high_tm=75 # maximum Tm value to report for High Tm alert
     Validate_Tm_Values(orf_seq,low_tm,high_tm) 
+
+    temp_diff=5 # maximum temperature difference between forward and reverse primers
+    Validate_Temperature_Difference(orf_seq, temp_diff)
+
+    #Validate_Hairpin_Formation(orf_seq)
 
     separate_primers_by_type(primer_order,path_fwd,path_rev)
     print(f"\nFinished in {time.time() - start_time:.6f} seconds.")
