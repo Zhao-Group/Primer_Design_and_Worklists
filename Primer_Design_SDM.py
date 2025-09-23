@@ -402,6 +402,19 @@ def Validate_Hairpin_Formation(seq):
     
     return None
 
+
+def get_codon_table_data(codon_table_file):
+    data=pd.read_csv(codon_table_file, sep='\t',comment="#")
+    print(data.columns.tolist())
+
+    # Sort by RSCU descending
+    data_sorted = data.sort_values(by="RSCU", ascending=False)
+
+    # Pick the first codon (highest RSCU) per amino acid
+    best_codons = data_sorted.groupby("CODON").first().reset_index()    
+
+    print(best_codons)
+
      
 
 def Validations(sequences):
@@ -483,6 +496,7 @@ if __name__ == '__main__':
 
     Validations(sequences)
     
+    # get_codon_table_data('Codon_Table/nuclear_codon_statistics.tsv')
     
 
     
