@@ -312,7 +312,7 @@ def Validate_GC_Content(seq, min_gc):
     return None
 
 
-def Validate_Tm_Values(seq,low_tm,high_tm):
+def Validate_Tm_Values(seq,low_tm,high_tm,tm_method):
     """
     checks for very low or very high Tm values for the sequence.
     Args:
@@ -333,6 +333,19 @@ def Validate_Tm_Values(seq,low_tm,high_tm):
     # print('%0.2f' % mt.Tm_GC(seq))
 
     # print('%0.2f' % mt.Tm_NN(seq))
+
+    if(tm_method=='Wallace'):
+        # Tm_Wallace is a simple formula based on the number of G/C and A/T pairs in the sequence.
+        wallace=mt.Tm_Wallace(seq)
+        if(wallace<low_tm):
+            print(f'Warning: Low Wallace Tm value with {wallace: .2f}C')
+            # return (f'Warning: Low Tm value with {wallace: .2f}C')
+        elif(wallace>high_tm):
+            print(f'Warning: High Wallace Tm value with {wallace: .2f}C')
+            # return (f'Warning: High Tm value with {wallace: .2f}C')
+        return 
+    
+    
 
 
 
@@ -405,19 +418,19 @@ def Validate_Hairpin_Formation(seq):
 
 def get_codon_table_data(codon_table_file):
     data=pd.read_csv(codon_table_file, sep='\t',comment="#")
-    print(data.columns.tolist())
+   #print(data.columns.tolist())
 
     # Sort by RSCU descending
     data_sorted = data.sort_values(by="RSCU", ascending=False)
 
     # Pick the first codon (highest RSCU) per amino acid
-    best_codons = data_sorted.groupby("CODON").first().reset_index()    
+    best_codons = data_sorted.groupby("Amino acid").first().reset_index()    
 
-    print(best_codons)
+    print("best codons are :" ,best_codons)
 
      
 
-def Validations(sequences):
+def Validations(sequences,tm_method):
 
     for seq in sequences:
         min_length_gc_at = 8 # minimum length of continuous GC or AT to report
@@ -436,7 +449,7 @@ def Validations(sequences):
 
         low_tm=60 # minimum Tm value to report for Low Tm alert
         high_tm=75 # maximum Tm value to report for High Tm alert
-        Validate_Tm_Values(seq,low_tm,high_tm) 
+        Validate_Tm_Values(seq,low_tm,high_tm,tm_method) 
 
         temp_diff=5 # maximum temperature difference between forward and reverse primers
         Validate_Temperature_Difference(seq, temp_diff)
@@ -465,16 +478,24 @@ if __name__ == '__main__':
     # Reverse_Primers_FILE = 'HMT_Reverse_Primers_Plate2.csv
     parser.add_argument('-rev', '--Reverse_Primers_File', default='HMT_Reverse_Primers_Plate2.csv', help="Output file for Reverse primers")
 
+
     # CODON_TABLE_FILE = 'Primer_Design/Codon_Table_Standard.csv'
     #parser.add_argument('-c', '--Codon_Table_File', default='Primer_Design/Codon_Table_Standard.csv', help="Codon Translation Table Mapping File")
 
     parser.add_argument('-c','--NCBI_Codon_Table_Value', default=1,help="NCBI Codon Translation Table ID Value") 
     # ORF_FILE = 'Primer_Design/HMT.txt' 
-    parser.add_argument('-orf', '--ORF_File', default='Primer_Design/HMT.txt', help="File containing Open Reading Frame Sequence") 
+    parser.add_argument('-orf', '--ORF_File', default='Primer_Design/HMT.txt', help="File containing Open Reading Frame Sequence")
+
+    # CODON_Statistics_FILE '
+    parser.add_argument('-cod', '--Codon_Stat_File', default='nuclear_codon_statistics.tsv', help="File for Codon") 
+
+     # Slecting the TM method '
+    parser.add_argument('-tm', '--TM_Method', default='SantaLucia', help="Selecting the TM method") 
 
     args = parser.parse_args()
 
     out_path, path_fwd, path_rev = process_outputs(args.Output_Directory,args.Primer_Output_File,args.Forward_Primers_File,args.Reverse_Primers_File)
+    
 
     remind_user_to_check_constants(args.Mutation_List,args.Output_Directory,args.ORF_File,args.NCBI_Codon_Table_Value)#args.Codon_Table_File)
     print(f'Working Directory: {os.getcwd()} \nProcessing...')
@@ -494,9 +515,11 @@ if __name__ == '__main__':
 
     sequences=primers["Sequence"].tolist() #list of primer sequences
 
-    Validations(sequences)
+    Validations(sequences, tm_method=args.TM_Method)
     
-    # get_codon_table_data('Codon_Table/nuclear_codon_statistics.tsv')
+    selected_organism=args.Codon_Stat_File
+    print(f"Selected organism for codon usage statistics: {selected_organism}")
+    get_codon_table_data(f'Codon_Table/{selected_organism}')
     
 
     
