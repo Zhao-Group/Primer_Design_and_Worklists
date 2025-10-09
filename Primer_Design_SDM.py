@@ -82,6 +82,11 @@ def find_repeated_kmers(seq, k=16):
 def read_orf_and_mutation_list(orf_file,mutation_list_file,codon_table_file_id):
     """Read the ORF sequence, mutation list, and codon table."""
     orf_seq = Seq(Path(orf_file).read_text().strip())
+
+    # ✅ Check if cDNA starts with start codon ATG
+    if not orf_seq.upper().startswith("ATG"):
+        print("⚠️ Warning: The provided cDNA sequence does not start with ATG (start codon).")
+        
     mutation_list = pd.read_csv(mutation_list_file)
     #codon_table = CodonTable.unambiguous_dna_by_id[codon_table_file_id].tolist() #pd.read_csv(codon_table_file)
     return orf_seq, mutation_list #, codon_table
@@ -184,6 +189,47 @@ def Validate_primer_length(primer_length):
     # If the count is greater than 0, print "Yes"
     if count:
         print(f'WARNING: {count} primers less than 27bp in the file.')
+
+
+def get_Amino_Acid_Sequence(seq):
+    """Translate a DNA sequence to its corresponding amino acid sequence."""
+
+    'Biopython - https://biopython.org/docs/1.75/api/Bio.Seq.html'
+    return str(seq.translate())
+
+def get_Stop_Codon(seq):
+    """Check if the DNA sequence contains a stop codon."""
+    seq=str(seq).upper()
+    # Get the standard codon table
+    table = CodonTable.unambiguous_dna_by_id[1]
+
+    # List all stop codons for this translation table
+    stop_codons = table.stop_codons
+    # print("Stop codons:", stop_codons)
+    # Find positions of stop codons in the sequence
+    stop_positions = []
+    for i in range(0, len(seq), 3):
+        codon = seq[i:i+3]
+        if codon in stop_codons:
+            stop_positions.append(i)
+    if len(stop_positions)>0:
+        print("Warning: Stop codons found at positions:", stop_positions)
+
+
+def validate_upstream_downstream(seq_str):
+    # Convert to uppercase for consistency
+    seq = Seq(seq_str.upper())
+    
+    # Condition 1: must be at least 50 bases long
+    if len(seq) < 50:
+        return False, f"Sequence too short (length {len(seq)} < 50)"
+    
+    # Condition 2: must contain only valid DNA nucleotides (A, T, G, C)
+    valid_bases = {"A", "T", "G", "C"}
+    if not set(seq).issubset(valid_bases):
+        return False, "Sequence contains invalid characters (non-DNA bases)"
+    
+    return True, "Valid upstream/left overhang sequence"
 
 # To check for High GC or High AT regions
 def Validate_GC_AT(seq, min_length):
@@ -433,6 +479,7 @@ def get_codon_table_data(codon_table_file):
 def Validations(sequences,tm_method):
 
     for seq in sequences:
+        get_Stop_Codon(seq)
         min_length_gc_at = 8 # minimum length of continuous GC or AT to report
         GC_AT_result=Validate_GC_AT(seq, min_length_gc_at)
         if len(GC_AT_result)>=1: print(f"Warning: High GC or AT {GC_AT_result}")
@@ -505,6 +552,7 @@ if __name__ == '__main__':
     find_repeated_kmers(orf_seq)
     #check if provided mutations align with translation
     validate_mutations(mutations['Mutations'].tolist(), orf_seq) 
+    print("Hi mutate ",mutations['Mutations'].tolist())
 
     primers = design_primers(orf_seq, mutations, args.NCBI_Codon_Table_Value)
     Validate_primer_length(primers["Length"].tolist())
