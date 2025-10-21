@@ -7,6 +7,7 @@ from primer3 import calc_tm # as calcTm - calcTm is deprecated
 import primer3
 
 from Bio.SeqUtils import MeltingTemp as mt
+from Bio.Data import IUPACData
 
 import pandas as pd
 from itertools import combinations
@@ -88,6 +89,12 @@ def read_orf_and_mutation_list(orf_file,mutation_list_file,codon_table_file_id):
         print("⚠️ Warning: The provided cDNA sequence does not start with ATG (start codon).")
         
     mutation_list = pd.read_csv(mutation_list_file)
+
+     # Limit check for mutation rows
+    if len(mutation_list) > 1000:
+        print(f"❌ ERROR: Mutation list contains {len(mutation_list)} entries — limit is 1000 per run. Please split the file and retry.")
+    elif len(mutation_list) == 0:
+        print("❌ ERROR: Mutation list is empty. Please provide at least one mutation.")
     #codon_table = CodonTable.unambiguous_dna_by_id[codon_table_file_id].tolist() #pd.read_csv(codon_table_file)
     return orf_seq, mutation_list #, codon_table
 
@@ -190,12 +197,79 @@ def Validate_primer_length(primer_length):
     if count:
         print(f'WARNING: {count} primers less than 27bp in the file.')
 
+def validate_mutation_position(mutation_pos_nt, orf_seq):
+    """
+    Ensure mutation position does not extend past ORF length.
+    
+    Args:
+        mutation_pos_nt (int): mutation position in nucleotides (1-based)
+        orf_seq (Seq): ORF DNA sequence
+    
+    """
+    max_nt_pos = len(orf_seq)  # total nucleotides in ORF
+    if not (1 <= mutation_pos_nt <= max_nt_pos):
+        print(f"❌ ERROR: Mutation position {mutation_pos_nt} exceeds ORF length ({max_nt_pos} nt).")
+
+
 
 def get_Amino_Acid_Sequence(seq):
     """Translate a DNA sequence to its corresponding amino acid sequence."""
 
     'Biopython - https://biopython.org/docs/1.75/api/Bio.Seq.html'
     return str(seq.translate())
+
+def is_valid_amino_acid_sequence(seq: str) -> bool:
+    valid_amino_acids = set(IUPACData.protein_letters)  # standard 20 amino acids (A, C, D, E, ...)
+    seq = seq.upper().replace(" ", "")  # normalize
+    return all(char in valid_amino_acids for char in seq)
+
+
+
+def parse_mutation(mutation_str):
+    """
+    Parses a mutation string into type, position, original, and target amino acids.
+    
+    Supports:
+        Substitution: M78Y
+        Deletion:     M78del
+        Insertion:    M78insY
+    Returns:
+        dict: {type, position (1-based), original_aa, new_aa}
+    """
+    mutation_str = mutation_str.strip()
+
+    # Substitution: e.g., M78Y
+    sub_match = re.fullmatch(r"([A-Z])(\d+)([A-Z])", mutation_str)
+    if sub_match:
+        return {
+            "type": "substitution",
+            "position": int(sub_match.group(2)),
+            "original_aa": sub_match.group(1),
+            "new_aa": sub_match.group(3)
+        }
+
+    # Deletion: e.g., M78del
+    del_match = re.fullmatch(r"([A-Z])(\d+)del", mutation_str)
+    if del_match:
+        return {
+            "type": "deletion",
+            "position": int(del_match.group(2)),
+            "original_aa": del_match.group(1),
+            "new_aa": None
+        }
+
+    # Insertion: e.g., M78insY
+    ins_match = re.fullmatch(r"([A-Z])(\d+)ins([A-Z]+)", mutation_str)
+    if ins_match:
+        return {
+            "type": "insertion",
+            "position": int(ins_match.group(2)),
+            "original_aa": ins_match.group(1),
+            "new_aa": ins_match.group(3)
+        }
+
+    raise print(f"Invalid mutation format: {mutation_str}")
+
 
 def get_Stop_Codon(seq):
     """Check if the DNA sequence contains a stop codon."""
