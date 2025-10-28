@@ -1,0 +1,1 @@
+## Default values for validation thresholds (min_gc, low_tm, high_tm, etc.)
