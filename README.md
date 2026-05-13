@@ -31,6 +31,9 @@ To setup with the appropriate versions, run the command:
 
 #### pip install requirements.txt
 
+### Docker Image
+A Dockerfile is available in this repo, with a working, pullable Image available from dockerhub: davidbianchi/mutagenesis:h_to_args_part2
+
 ### Reference
 <details>
 <summary>If you use this tool, please cite us:</summary>
