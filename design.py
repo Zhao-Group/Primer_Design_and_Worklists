@@ -32,33 +32,55 @@ def validate_position(amino_acid_pos, protein_len):
         sys.exit('Amino acid position exceeds ORF bounds.')
 
 def extract_primer(seq, start):
-    """Extract a 27bp primer around the mutation site."""
+    """Extract a primer window around the mutation site.
+
+    The -12/+15 window (12bp upstream of the codon, codon + 12bp downstream)
+    is the method's fixed geometry. When overhangs flank the ORF the window can
+    extend into them, giving full-length primers for terminal mutations.
+    TODO(SME q2, 2026-06-22): confirm the flank size / window geometry; see
+    MUTAGENESIS_INTEGRATION_SPEC.md.
+    """
     return seq[max(0, start - 12):min(len(seq), start + 15)]
 
 
 
-def design_primers(orf_seq, mutations, codon_table_id):
-    """Main primer design function."""
+def design_primers(orf_seq, mutations, codon_table_id, left_overhang='', right_overhang=''):
+    """Main primer design function.
+
+    Primers are windowed over `left_overhang + ORF + right_overhang` so that
+    mutations near the ORF termini still yield full-length primers when overhangs
+    are supplied. Mutation positions are validated/translated against the ORF
+    alone; only the windowing is offset by len(left_overhang).
+    """
     primers = []
+    left = str(left_overhang or '').upper()
+    right = str(right_overhang or '').upper()
+    offset = len(left)
+    full = Seq(left) + orf_seq + Seq(right)
+    protein_len = len(orf_seq) // 3
 
     for mutation in mutations['Mutations']:
+        mutation = str(mutation).strip()
         pos = int(re.search(r'\d+', mutation).group()) - 1
-        validate_position(pos + 1, len(orf_seq) // 3)
+        validate_position(pos + 1, protein_len)
 
-        # Get all possible translation table combinations for the aa resiudes in question
+        # Get all possible codons coding for the target aa residue
         original_aa, target_aa = mutation[0], mutation[-1]
         codon_table = CodonTable.unambiguous_dna_by_id[int(codon_table_id)].forward_table
         codons = [key for key, value in codon_table.items() if value == target_aa]
-        #codons = codon_table[codon_table['SingleLetter'] == target_aa]['Codon'].tolist()
+        if not codons:
+            sys.exit(f'ERROR: target residue "{target_aa}" in mutation "{mutation}" is '
+                     f'not a valid amino acid for codon table {codon_table_id}.')
         new_codon = find_optimal_codon(orf_seq, pos, codons)
 
-        mutated_seq = orf_seq[:pos * 3] + new_codon + orf_seq[(pos + 1) * 3:]
-        primer = extract_primer(mutated_seq, pos * 3)
+        codon_start = offset + pos * 3
+        mutated_seq = full[:codon_start] + new_codon + full[codon_start + 3:]
+        primer = extract_primer(mutated_seq, codon_start)
         tm = int(math.ceil(calc_tm(str(primer), dv_conc=2, tm_method='santalucia', salt_corrections_method='owczarzy')))
 
-        primers.append((mutation, primer, tm, int(SeqUtils.gc_fraction(primer)*100.0), len(primer))) #SeqUtils.GC is deprecated after Biopython 1.82 
-        
-    return pd.DataFrame(primers, columns=['Name', 'Sequence', 'Tm', 'GC', 'Length'])
+        primers.append((mutation, str(primer), tm, int(SeqUtils.gc_fraction(primer)*100.0), len(primer), pos + 1)) #SeqUtils.GC is deprecated after Biopython 1.82
+
+    return pd.DataFrame(primers, columns=['Name', 'Sequence', 'Tm', 'GC', 'Length', 'AA_Position'])
 
 
 def find_repeated_kmers(seq, k=16):

@@ -16,8 +16,11 @@ import os
 import sys
 import re
 import math
+import json
 from pathlib import Path
 import argparse
+
+from validators import get_primer_alerts
 
 # Create the full path to the file ###########################
 ######################################
@@ -94,38 +97,84 @@ def read_orf_and_mutation_list(orf_file,mutation_list_file,codon_table_file_id):
     return orf_seq, mutation_list #, codon_table
 
 
-def create_primer_order_file(primers):
-    """Create forward and reverse primers with appropriate names."""
-    primer_order = []
+def read_overhang(path):
+    """Read an optional overhang sequence file; '' if not provided/missing."""
+    if not path:
+        return ''
+    p = Path(path)
+    if not p.exists():
+        return ''
+    return p.read_text().strip()
 
-    for _, row in primers.iterrows():
-        fwd_name = f"Phy_{row['Name']}_Fwd"
-        rev_name = f"Phy_{row['Name']}_Rev"
-        rev_seq = str(Seq(row['Sequence']).reverse_complement())
 
-        primer_order.extend([
-            [fwd_name, row['Sequence'], row['Tm'], row['GC'], row['Length']],
-            [rev_name, rev_seq, row['Tm'], row['GC'], row['Length']]
-        ])
+# --- Plate layout -----------------------------------------------------------
+PLATE_ROWS = "ABCDEFGH"
+PLATE_COLS = 12
+WELLS_PER_PLATE = len(PLATE_ROWS) * PLATE_COLS  # 96
 
-    return pd.DataFrame(primer_order, columns=['Name', 'Sequence', 'Tm', 'GC', 'Length'])
+# TODO(SME q1, 2026-06-22): plate topology unconfirmed. Defaults below; flip the
+# two constants once the SME confirms. See MUTAGENESIS_INTEGRATION_SPEC.md.
+#  - forward & reverse primers go on SEPARATE plate sets
+#  - within a plate, fill row-major (A1..A12, B1..)
+#  - a forward/reverse pair shares the same well index on its respective plate
+#  - SME-CONFIRMED: ordered by aa position, variants at a site grouped together
+FORWARD_REVERSE_SEPARATE_PLATES = True
+FILL_ORDER = "row-major"  # or "column-major"
 
-def separate_primers_by_type(primers, out_path_fwd, out_path_rev):
-    """Separate forward and reverse primers into different CSV files."""
+# Output columns for the single combined results CSV consumed by the backend.
+RESULT_COLUMNS = ['Mutations', 'Assembly_Fragments', 'Direction', 'Sequence',
+                  'Tm', 'GC', 'Length', 'Alerts', 'Plate', 'Well']
 
-    # Create forward and reverse primer DataFrames safely
-    fwd_primers = primers[primers['Name'].str.contains('_Fwd')].copy()
-    rev_primers = primers[primers['Name'].str.contains('_Rev')].copy()
 
-    # Define 96-well plate positions
-    wells = [f"{row}{col}" for row in 'ABCDEFGH' for col in range(1, 13)]
+def _plate_wells():
+    if FILL_ORDER == "column-major":
+        return [f"{r}{c}" for c in range(1, PLATE_COLS + 1) for r in PLATE_ROWS]
+    return [f"{r}{c}" for r in PLATE_ROWS for c in range(1, PLATE_COLS + 1)]
 
-    # Use .loc to assign wells to the DataFrames
-    fwd_primers.loc[:, 'Well'] = wells[:len(fwd_primers)]
-    rev_primers.loc[:, 'Well'] = wells[:len(rev_primers)]
 
-    # Save to CSV files
-    fwd_primers.to_csv(out_path_fwd, index=False)
-    rev_primers.to_csv(out_path_rev, index=False)
+def _make_row(src, direction, seq, plate, well, tm_method):
+    """One combined-CSV row. Alerts are JSON-encoded (a list) so the backend can
+    json.loads them straight into the typed result."""
+    return {
+        'Mutations': src['Name'],
+        'Assembly_Fragments': 1,  # v1 single-substitution: one fragment per mutation
+        'Direction': direction,
+        'Sequence': seq,
+        'Tm': src['Tm'],
+        'GC': src['GC'],
+        'Length': len(seq),
+        'Alerts': json.dumps(get_primer_alerts(seq, tm_method)),
+        'Plate': plate,
+        'Well': well,
+    }
 
-    print("\nPrimers separated for IDT order in 96-well plate.")
+
+def build_results(primers, tm_method='SantaLucia'):
+    """Build the single combined results table.
+
+    One forward + one reverse row per designed primer, ordered by aa position
+    (variants at the same site grouped), assigned across 96-well plates, each
+    row carrying its own per-primer alerts.
+    """
+    wells = _plate_wells()
+    ordered = primers.sort_values('AA_Position', kind='stable').reset_index(drop=True)
+    n = len(ordered)
+    fwd_plate_count = math.ceil(n / WELLS_PER_PLATE) if n else 0
+
+    rows = []
+    for i, src in ordered.iterrows():
+        well = wells[i % WELLS_PER_PLATE]
+        plate_offset = i // WELLS_PER_PLATE
+        fwd_seq = src['Sequence']
+        rev_seq = str(Seq(fwd_seq).reverse_complement())
+
+        rows.append(_make_row(src, 'Forward', fwd_seq,
+                              f"Plate {plate_offset + 1}", well, tm_method))
+
+        rev_plate = (fwd_plate_count + plate_offset + 1
+                     if FORWARD_REVERSE_SEPARATE_PLATES else plate_offset + 1)
+        rows.append(_make_row(src, 'Reverse', rev_seq,
+                              f"Plate {rev_plate}", well, tm_method))
+
+    print(f"\nBuilt {len(rows)} primers across {fwd_plate_count} forward plate(s).")
+    return pd.DataFrame(rows, columns=RESULT_COLUMNS)
