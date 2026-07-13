@@ -19,6 +19,18 @@ import math
 from pathlib import Path
 import argparse
 
+# --- Alert thresholds -------------------------------------------------------
+# TODO(SME q3, 2026-06-22): confirm these values with the SME. They are the
+# thresholds the result table's "Alerts" column is built from. Centralised here
+# so confirming them is a one-line change. See MUTAGENESIS_INTEGRATION_SPEC.md.
+GC_AT_RUN_MIN = 8      # min length of a continuous GC or AT run to flag
+HOMOPOLYMER_MIN = 6    # min homopolymer run length to flag
+REPEAT_MIN = 16        # min repeated-fragment length to flag
+HIGH_GC_PCT = 70       # flag primers whose GC% exceeds this
+TM_LOW = 60            # flag primers with Tm below this (°C)
+TM_HIGH = 75           # flag primers with Tm above this (°C)
+TM_DIFF_MAX = 5        # flag fwd/rev Tm difference above this (°C)
+
 
 def validate_upstream_downstream(seq_str):
     # Convert to uppercase for consistency
@@ -189,13 +201,13 @@ def Validate_Tm_Values(seq,low_tm,high_tm,tm_method):
         wallace=mt.Tm_Wallace(seq)
         if(wallace<low_tm):
             print(f'Warning: Low Wallace Tm value with {wallace: .2f}C')
-            # return (f'Warning: Low Tm value with {wallace: .2f}C')
+            return (f'Low Wallace Tm value with {wallace: .2f}C')
         elif(wallace>high_tm):
             print(f'Warning: High Wallace Tm value with {wallace: .2f}C')
-            # return (f'Warning: High Tm value with {wallace: .2f}C')
-        return 
-    
-    
+            return (f'High Wallace Tm value with {wallace: .2f}C')
+        return None
+
+
 
 
 
@@ -261,20 +273,33 @@ def Validate_Hairpin_Formation(seq):
 
     if(hairpin.structure_found):
         print(f'Warning: Hairpin structure detected')
-    
-    
+        return 'Hairpin structure detected'
+
     return None
 
 def validate_mutations(mutation_list, orf_seq):
-    """Check if the provided mutations align with translation of ORF sequence."""
+    """Check that each mutation parses and aligns with the ORF translation.
+
+    Exits non-zero with a clear message on the first bad entry so the job is
+    reported as failed (rather than producing wrong primers). The frontend
+    validates these client-side too; this is the backstop.
+    """
     protein = orf_seq.translate()
     for mutation in mutation_list:
-        if pd.notna(mutation) and mutation.strip() != "":
-            pos = int(re.search(r'\d+', mutation).group()) - 1
-            if protein[pos] != mutation[0]:
-                sys.exit(f'ERROR: Mismatch at {pos + 1}. Expected {mutation[0]}, found {protein[pos]}.')
-        else:
-            sys.exit(f'ERROR: at null value in csv file. Format the csv file.')
+        if not (pd.notna(mutation) and str(mutation).strip() != ""):
+            sys.exit('ERROR: null/blank mutation in CSV. Provide one substitution '
+                     'per row under a "Mutations" header (e.g. K15A).')
+        m = str(mutation).strip()
+        match = re.search(r'\d+', m)
+        if not match:
+            sys.exit(f'ERROR: could not parse a position from mutation "{m}". '
+                     f'Expected a substitution like K15A.')
+        pos = int(match.group()) - 1
+        if pos < 0 or pos >= len(protein):
+            sys.exit(f'ERROR: mutation "{m}" position {pos + 1} is outside the ORF '
+                     f'(protein length {len(protein)}).')
+        if protein[pos] != m[0]:
+            sys.exit(f'ERROR: Mismatch at {pos + 1}. Expected {m[0]}, found {protein[pos]}.')
 
 def Validate_primer_length(primer_length):
     
@@ -300,31 +325,50 @@ def get_Stop_Codon(seq):
             stop_positions.append(i)
     if len(stop_positions)>0:
         print("Warning: Stop codons found at positions:", stop_positions)
+        return f"Internal stop codon(s) at nt position(s): {stop_positions}"
+    return None
 
 
-def Validations(sequences,tm_method):
+def get_primer_alerts(seq, tm_method='SantaLucia'):
+    """Run every per-primer check and RETURN a list of human-readable alert
+    strings (empty if the primer is clean). Replaces the old print-only
+    `Validations`; the result feeds the "Alerts" column of the results table.
+    """
+    seq = str(seq).upper()
+    alerts = []
 
-    for seq in sequences:
-        get_Stop_Codon(seq)
-        min_length_gc_at = 8 # minimum length of continuous GC or AT to report
-        GC_AT_result=Validate_GC_AT(seq, min_length_gc_at)
-        if len(GC_AT_result)>=1: print(f"Warning: High GC or AT {GC_AT_result}")
+    stop = get_Stop_Codon(seq)
+    if stop:
+        alerts.append(stop)
 
-        min_length_homopolymer = 6 # minimum homopolymer length
-        
-        Homoploymer_Stretches_result=Validate_Homoploymer_Stretches(seq, min_length_homopolymer)
-        if len(Homoploymer_Stretches_result)>=1: print(Homoploymer_Stretches_result)
+    gc_at = Validate_GC_AT(seq, GC_AT_RUN_MIN)
+    if gc_at:
+        runs = ", ".join(f"{kind} {sub}" for (kind, _s, _e, sub) in gc_at)
+        alerts.append(f"High GC/AT run(s): {runs}")
 
-        Validate_Repeated_Fragments(seq,16)
+    homo = Validate_Homoploymer_Stretches(seq, HOMOPOLYMER_MIN)
+    if homo:
+        runs = ", ".join(f"{base.strip(', ')} {sub}" for (base, _s, _e, sub) in homo)
+        alerts.append(f"Homopolymer stretch(es): {runs}")
 
-        min_gc=70 # minimum GC content percentage to report for High GC content alert
-        Validate_GC_Content(seq,min_gc)
+    rep = Validate_Repeated_Fragments(seq, REPEAT_MIN)
+    if rep:
+        alerts.append(f"Repeated fragment(s): {', '.join(frag for frag, _pos in rep)}")
 
-        low_tm=60 # minimum Tm value to report for Low Tm alert
-        high_tm=75 # maximum Tm value to report for High Tm alert
-        Validate_Tm_Values(seq,low_tm,high_tm,tm_method) 
+    gc = Validate_GC_Content(seq, HIGH_GC_PCT)
+    if gc:
+        alerts.append(gc.strip())
 
-        temp_diff=5 # maximum temperature difference between forward and reverse primers
-        Validate_Temperature_Difference(seq, temp_diff)
+    tm = Validate_Tm_Values(seq, TM_LOW, TM_HIGH, tm_method)
+    if tm:
+        alerts.append(tm.strip())
 
-        Validate_Hairpin_Formation(seq)
+    tdiff = Validate_Temperature_Difference(Seq(seq), TM_DIFF_MAX)
+    if tdiff:
+        alerts.append(tdiff.strip())
+
+    hp = Validate_Hairpin_Formation(seq)
+    if hp:
+        alerts.append(hp)
+
+    return alerts

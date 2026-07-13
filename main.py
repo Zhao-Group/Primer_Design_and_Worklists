@@ -19,9 +19,9 @@ import math
 from pathlib import Path
 import argparse
 
-from parsers import process_outputs, read_orf_and_mutation_list, create_primer_order_file, separate_primers_by_type
+from parsers import process_outputs, read_orf_and_mutation_list, build_results, read_overhang
 from design import design_primers, find_repeated_kmers
-from validators import validate_mutations, Validate_primer_length, Validations
+from validators import validate_mutations, Validate_primer_length
 from codon_utils import get_codon_table_data
 
 
@@ -56,8 +56,12 @@ if __name__ == '__main__':
     #parser.add_argument('-c', '--Codon_Table_File', default='Primer_Design/Codon_Table_Standard.csv', help="Codon Translation Table Mapping File")
 
     parser.add_argument('-c','--NCBI_Codon_Table_Value', default=1,help="NCBI Codon Translation Table ID Value") 
-    # ORF_FILE = 'Primer_Design/HMT.txt' 
+    # ORF_FILE = 'Primer_Design/HMT.txt'
     parser.add_argument('-orf', '--ORF_File', default='Primer_Design/HMT.txt', help="File containing Open Reading Frame Sequence")
+
+    # Optional overhangs (upstream/downstream flanks); concatenated around the ORF
+    parser.add_argument('-left', '--Left_Overhang_File', default=None, help="Optional file with left-overhang (upstream) sequence")
+    parser.add_argument('-right', '--Right_Overhang_File', default=None, help="Optional file with right-overhang (downstream) sequence")
 
     # CODON_Statistics_FILE '
     parser.add_argument('-cod', '--Codon_Stat_File', default='nuclear_codon_statistics.tsv', help="File for Codon") 
@@ -75,28 +79,24 @@ if __name__ == '__main__':
     
     orf_seq, mutations = read_orf_and_mutation_list(args.ORF_File,args.Mutation_List,args.NCBI_Codon_Table_Value)
 
+    left_overhang = read_overhang(args.Left_Overhang_File)
+    right_overhang = read_overhang(args.Right_Overhang_File)
+
     find_repeated_kmers(orf_seq)
     #check if provided mutations align with translation
-    validate_mutations(mutations['Mutations'].tolist(), orf_seq) 
-    print("Hi mutate ",mutations['Mutations'].tolist())
+    validate_mutations(mutations['Mutations'].tolist(), orf_seq)
 
-    primers = design_primers(orf_seq, mutations, args.NCBI_Codon_Table_Value)
+    primers = design_primers(orf_seq, mutations, args.NCBI_Codon_Table_Value,
+                             left_overhang, right_overhang)
     Validate_primer_length(primers["Length"].tolist())
-    
-    primer_order = create_primer_order_file(primers)
-    primer_order.to_csv(out_path, index=False)
-    
 
-    sequences=primers["Sequence"].tolist() #list of primer sequences
+    # Single combined results CSV (fwd+rev rows, direction/plate/well/alerts).
+    results = build_results(primers, tm_method=args.TM_Method)
+    results.to_csv(out_path, index=False)
 
-    Validations(sequences, tm_method=args.TM_Method)
-    
     selected_organism=args.Codon_Stat_File
     print(f"Selected organism for codon usage statistics: {selected_organism}")
     get_codon_table_data(f'Codon_Table/{selected_organism}')
-    
 
-    
-
-    separate_primers_by_type(primer_order,path_fwd,path_rev)
+    print(f"\nResults written to {out_path}")
     print(f"\nFinished in {time.time() - start_time:.6f} seconds.")
