@@ -1,7 +1,7 @@
 ## Primer design, PCR organization, and worklist generation
 ![Summary]( Figures/Schema.png)
 
-## Online GUI Tool for SDM primer design
+### Online GUI Tool for SDM primer design
 [Access Here](https://mutagenesis.frontend.staging.mmli2.ncsa.illinois.edu/home)
 
 ### The Manuscript
