@@ -2,7 +2,7 @@
 ![Summary]( Figures/Schema.png)
 
 ## Online GUI Tool for SDM primer design
-[Access Here] (https://mutagenesis.frontend.staging.mmli2.ncsa.illinois.edu/home)
+[Access Here](https://mutagenesis.frontend.staging.mmli2.ncsa.illinois.edu/home)
 
 ### The Manuscript
 This repository accompanies the work [A generalized platform for artificial intelligence-powered autonomous enzyme engineering
